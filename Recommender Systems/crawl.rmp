@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><process version="9.8.001">
+  <context>
+    <input/>
+    <output/>
+    <macros/>
+  </context>
+  <operator activated="true" class="process" compatibility="9.8.001" expanded="true" name="Process">
+    <parameter key="logverbosity" value="init"/>
+    <parameter key="random_seed" value="2001"/>
+    <parameter key="send_mail" value="never"/>
+    <parameter key="notification_email" value=""/>
+    <parameter key="process_duration_for_mail" value="30"/>
+    <parameter key="encoding" value="SYSTEM"/>
+    <process expanded="true">
+      <operator activated="true" class="concurrency:loop" compatibility="9.8.001" expanded="true" height="82" name="Loop" width="90" x="112" y="34">
+        <parameter key="number_of_iterations" value="20"/>
+        <parameter key="iteration_macro" value="iteration"/>
+        <parameter key="reuse_results" value="false"/>
+        <parameter key="enable_parallel_execution" value="true"/>
+        <process expanded="true">
+          <operator activated="true" class="web:get_webpage" compatibility="9.3.001" expanded="true" height="68" name="Get Page" width="90" x="246" y="34">
+            <parameter key="url" value="https://www.hotukdeals.com/?page=%{iteration}"/>
+            <parameter key="random_user_agent" value="false"/>
+            <parameter key="connection_timeout" value="10000"/>
+            <parameter key="read_timeout" value="10000"/>
+            <parameter key="follow_redirects" value="true"/>
+            <parameter key="accept_cookies" value="none"/>
+            <parameter key="cookie_scope" value="global"/>
+            <parameter key="request_method" value="GET"/>
+            <list key="query_parameters"/>
+            <list key="request_properties"/>
+            <parameter key="override_encoding" value="false"/>
+            <parameter key="encoding" value="SYSTEM"/>
+            <parameter key="keep_sensitive_headers" value="false"/>
+          </operator>
+          <connect from_op="Get Page" from_port="output" to_port="output 1"/>
+          <portSpacing port="source_input 1" spacing="0"/>
+          <portSpacing port="sink_output 1" spacing="0"/>
+          <portSpacing port="sink_output 2" spacing="0"/>
+        </process>
+      </operator>
+      <operator activated="true" class="text:process_documents" compatibility="9.3.001" expanded="true" height="103" name="Process Documents" width="90" x="447" y="34">
+        <parameter key="create_word_vector" value="true"/>
+        <parameter key="vector_creation" value="Term Occurrences"/>
+        <parameter key="add_meta_information" value="true"/>
+        <parameter key="keep_text" value="false"/>
+        <parameter key="prune_method" value="percentual"/>
+        <parameter key="prune_below_percent" value="30.0"/>
+        <parameter key="prune_above_percent" value="65.0"/>
+        <parameter key="prune_below_absolute" value="21"/>
+        <parameter key="prune_above_absolute" value="1"/>
+        <parameter key="prune_below_rank" value="0.99"/>
+        <parameter key="prune_above_rank" value="1.0"/>
+        <parameter key="datamanagement" value="double_sparse_array"/>
+        <parameter key="data_management" value="auto"/>
+        <process expanded="true">
+          <operator activated="true" class="text:tokenize" compatibility="9.3.001" expanded="true" height="68" name="Tokenize" width="90" x="112" y="34">
+            <parameter key="mode" value="non letters"/>
+            <parameter key="characters" value=".:"/>
+            <parameter key="language" value="English"/>
+            <parameter key="max_token_length" value="3"/>
+          </operator>
+          <operator activated="true" class="text:transform_cases" compatibility="9.3.001" expanded="true" height="68" name="Transform Cases" width="90" x="246" y="34">
+            <parameter key="transform_to" value="lower case"/>
+          </operator>
+          <operator activated="true" class="text:stem_porter" compatibility="9.3.001" expanded="true" height="68" name="Stem (Porter)" width="90" x="380" y="34"/>
+          <operator activated="true" class="text:filter_stopwords_english" compatibility="9.3.001" expanded="true" height="68" name="Filter Stopwords (English)" width="90" x="514" y="34"/>
+          <operator activated="true" class="text:filter_by_length" compatibility="9.3.001" expanded="true" height="68" name="Filter Tokens (by Length)" width="90" x="648" y="34">
+            <parameter key="min_chars" value="3"/>
+            <parameter key="max_chars" value="25"/>
+          </operator>
+          <connect from_port="document" to_op="Tokenize" to_port="document"/>
+          <connect from_op="Tokenize" from_port="document" to_op="Transform Cases" to_port="document"/>
+          <connect from_op="Transform Cases" from_port="document" to_op="Stem (Porter)" to_port="document"/>
+          <connect from_op="Stem (Porter)" from_port="document" to_op="Filter Stopwords (English)" to_port="document"/>
+          <connect from_op="Filter Stopwords (English)" from_port="document" to_op="Filter Tokens (by Length)" to_port="document"/>
+          <connect from_op="Filter Tokens (by Length)" from_port="document" to_port="document 1"/>
+          <portSpacing port="source_document" spacing="0"/>
+          <portSpacing port="sink_document 1" spacing="0"/>
+          <portSpacing port="sink_document 2" spacing="0"/>
+        </process>
+      </operator>
+      <operator activated="true" class="write_excel" compatibility="9.8.001" expanded="true" height="103" name="Write Excel" width="90" x="715" y="187">
+        <parameter key="excel_file" value="D:/OneDrive/Desktop/MASTERS/Information Retrieval/Coursework 2/crawledPages.xlsx"/>
+        <parameter key="file_format" value="xlsx"/>
+        <enumeration key="sheet_names">
+          <parameter key="sheet_name_element" value="crawledPages"/>
+        </enumeration>
+        <parameter key="sheet_name" value="RapidMiner Data"/>
+        <parameter key="date_format" value="yyyy-MM-dd HH:mm:ss"/>
+        <parameter key="number_format" value="#.0"/>
+        <parameter key="encoding" value="SYSTEM"/>
+      </operator>
+      <connect from_op="Loop" from_port="output 1" to_op="Process Documents" to_port="documents 1"/>
+      <connect from_op="Process Documents" from_port="example set" to_op="Write Excel" to_port="input"/>
+      <connect from_op="Process Documents" from_port="word list" to_port="result 1"/>
+      <portSpacing port="source_input 1" spacing="0"/>
+      <portSpacing port="sink_result 1" spacing="0"/>
+      <portSpacing port="sink_result 2" spacing="0"/>
+    </process>
+  </operator>
+</process>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><process version="9.8.001">
+  <context>
+    <input/>
+    <output/>
+    <macros/>
+  </context>
+  <operator activated="true" class="process" compatibility="9.4.000" expanded="true" name="Process">
+    <parameter key="logverbosity" value="init"/>
+    <parameter key="random_seed" value="2001"/>
+    <parameter key="send_mail" value="never"/>
+    <parameter key="notification_email" value=""/>
+    <parameter key="process_duration_for_mail" value="30"/>
+    <parameter key="encoding" value="SYSTEM"/>
+    <process expanded="true">
+      <operator activated="true" class="read_csv" compatibility="8.1.000" expanded="true" height="68" name="Read CSV" width="90" x="45" y="187">
+        <parameter key="csv_file" value="D:/OneDrive/Desktop/MASTERS/Information Retrieval/Coursework 2/Resources/itemRatings.csv"/>
+        <parameter key="column_separators" value=","/>
+        <parameter key="trim_lines" value="false"/>
+        <parameter key="use_quotes" value="true"/>
+        <parameter key="quotes_character" value="&quot;"/>
+        <parameter key="escape_character" value="\"/>
+        <parameter key="skip_comments" value="false"/>
+        <parameter key="comment_characters" value="#"/>
+        <parameter key="starting_row" value="1"/>
+        <parameter key="parse_numbers" value="true"/>
+        <parameter key="decimal_character" value="."/>
+        <parameter key="grouped_digits" value="false"/>
+        <parameter key="grouping_character" value=","/>
+        <parameter key="infinity_representation" value=""/>
+        <parameter key="date_format" value=""/>
+        <parameter key="first_row_as_names" value="false"/>
+        <list key="annotations">
+          <parameter key="0" value="Name"/>
+        </list>
+        <parameter key="time_zone" value="SYSTEM"/>
+        <parameter key="locale" value="English (United States)"/>
+        <parameter key="encoding" value="UTF-8"/>
+        <parameter key="read_all_values_as_polynominal" value="false"/>
+        <list key="data_set_meta_data_information">
+          <parameter key="0" value="rating.true.real.label"/>
+          <parameter key="1" value="itemID.true.nominal.attribute"/>
+          <parameter key="2" value="userID.true.nominal.attribute"/>
+        </list>
+        <parameter key="read_not_matching_values_as_missings" value="true"/>
+        <parameter key="datamanagement" value="double_array"/>
+        <parameter key="data_management" value="auto"/>
+      </operator>
+      <operator activated="true" class="filter_examples" compatibility="9.5.001" expanded="true" height="103" name="Filter Examples" width="90" x="45" y="289">
+        <parameter key="parameter_expression" value=""/>
+        <parameter key="condition_class" value="custom_filters"/>
+        <parameter key="invert_filter" value="false"/>
+        <list key="filters_list">
+          <parameter key="filters_entry_key" value="label.ne.?"/>
+        </list>
+        <parameter key="filters_logic_and" value="true"/>
+        <parameter key="filters_check_metadata" value="true"/>
+      </operator>
+      <operator activated="true" class="set_role" compatibility="9.8.001" expanded="true" height="82" name="Unrated Items" width="90" x="246" y="391">
+        <parameter key="attribute_name" value="rating"/>
+        <parameter key="target_role" value="prediction"/>
+        <list key="set_additional_roles">
+          <parameter key="itemID" value="item identification"/>
+          <parameter key="userID" value="user identification"/>
+          <parameter key="rating" value="prediction"/>
+        </list>
+      </operator>
+      <operator activated="true" class="set_role" compatibility="9.8.001" expanded="true" height="82" name="Rated Items" width="90" x="246" y="136">
+        <parameter key="attribute_name" value="rating"/>
+        <parameter key="target_role" value="label"/>
+        <list key="set_additional_roles">
+          <parameter key="itemID" value="item identification"/>
+          <parameter key="userID" value="user identification"/>
+        </list>
+      </operator>
+      <operator activated="true" class="irbrecommender:item_k-NN_rp" compatibility="5.1.002" expanded="true" height="82" name="Item k-NN" width="90" x="447" y="136">
+        <parameter key="k" value="3"/>
+        <parameter key="Min Rating" value="1"/>
+        <parameter key="Range" value="4"/>
+        <parameter key="reg_u" value="10.0"/>
+        <parameter key="reg_i" value="5.0"/>
+        <parameter key="schrinkage" value="10.0"/>
+        <parameter key="Correlation mode" value="pearson"/>
+      </operator>
+      <operator activated="true" class="irbrecommender:apply_model_rp" compatibility="5.1.002" expanded="true" height="82" name="Evaluate Predictions" width="90" x="581" y="136">
+        <parameter key="Online updates" value="false"/>
+      </operator>
+      <operator activated="true" class="irbrecommender:performance_rating_prediction" compatibility="5.1.002" expanded="true" height="82" name="Training Data Performance" width="90" x="715" y="136">
+        <parameter key="Min Rating" value="1"/>
+        <parameter key="Range" value="4"/>
+      </operator>
+      <operator activated="true" class="irbrecommender:apply_model_rp" compatibility="5.1.002" expanded="true" height="82" name="Predict Unrated" width="90" x="715" y="391">
+        <parameter key="Online updates" value="false"/>
+      </operator>
+      <connect from_op="Read CSV" from_port="output" to_op="Filter Examples" to_port="example set input"/>
+      <connect from_op="Filter Examples" from_port="example set output" to_op="Rated Items" to_port="example set input"/>
+      <connect from_op="Filter Examples" from_port="unmatched example set" to_op="Unrated Items" to_port="example set input"/>
+      <connect from_op="Unrated Items" from_port="example set output" to_op="Predict Unrated" to_port="query set"/>
+      <connect from_op="Rated Items" from_port="example set output" to_op="Item k-NN" to_port="example set"/>
+      <connect from_op="Item k-NN" from_port="Model" to_op="Evaluate Predictions" to_port="Model"/>
+      <connect from_op="Item k-NN" from_port="example set" to_op="Evaluate Predictions" to_port="query set"/>
+      <connect from_op="Evaluate Predictions" from_port="result set" to_op="Training Data Performance" to_port="predictions"/>
+      <connect from_op="Evaluate Predictions" from_port="Model" to_op="Predict Unrated" to_port="Model"/>
+      <connect from_op="Training Data Performance" from_port="performance" to_port="result 2"/>
+      <connect from_op="Training Data Performance" from_port="evaluation measures" to_port="result 3"/>
+      <connect from_op="Predict Unrated" from_port="result set" to_port="result 1"/>
+      <portSpacing port="source_input 1" spacing="0"/>
+      <portSpacing port="sink_result 1" spacing="0"/>
+      <portSpacing port="sink_result 2" spacing="0"/>
+      <portSpacing port="sink_result 3" spacing="0"/>
+      <portSpacing port="sink_result 4" spacing="0"/>
+      <description align="left" color="yellow" colored="false" height="121" resized="true" width="92" x="44" y="393">Splits ratings to be predicted and the ones already stated.</description>
+      <description align="center" color="yellow" colored="false" height="121" resized="true" width="90" x="248" y="216">Gets the stated ratings and sets the user and item role</description>
+      <description align="center" color="yellow" colored="false" height="123" resized="true" width="90" x="248" y="475">Gets the ratings to predict and sets the user and item role</description>
+      <description align="center" color="yellow" colored="false" height="156" resized="true" width="120" x="435" y="222">Creates our model for prediction based on 3 similar items and using pearson correlation coefficient</description>
+      <description align="center" color="yellow" colored="false" height="89" resized="true" width="90" x="582" y="221">Applies the model to the known data</description>
+      <description align="center" color="yellow" colored="false" height="128" resized="true" width="98" x="710" y="221">checks how well the prediction was by using the MAE measure</description>
+      <description align="center" color="yellow" colored="false" height="114" resized="true" width="90" x="714" y="476">Applies the model to the unlablled data</description>
+      <description align="center" color="yellow" colored="false" height="97" resized="true" width="90" x="45" y="88">Reads the dataset and sets metadata</description>
+    </process>
+  </operator>
+</process>

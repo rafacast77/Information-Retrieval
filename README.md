@@ -7,6 +7,7 @@ This repository contains the reports and module description from the Information
    * Document Matrix
    * Weighting Schemes
    
+#
    
 * **Project Two → Recommender System:** Built a web crawler to retrieve web pages using **RapidMiner**. Engineer a content-based text recommender system and created an item recommender system to predict ratings. The RapidMiner files and report can be found on the "Recommender Systems" folder within this repository.
    * Item base recommender system
